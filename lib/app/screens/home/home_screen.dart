@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../settings/settings_screen.dart';
+import '../video/video_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -138,8 +139,9 @@ class HomeScreen extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(100),
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Video screen coming soon.')),
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (context) => const VideoScreen()),
           );
         },
         child: Ink(
