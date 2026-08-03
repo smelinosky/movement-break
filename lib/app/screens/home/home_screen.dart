@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -64,8 +65,11 @@ class HomeScreen extends StatelessWidget {
         IconButton(
           tooltip: 'Settings',
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Settings screen coming next.')),
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const SettingsScreen(),
+              ),
             );
           },
           icon: const Icon(
