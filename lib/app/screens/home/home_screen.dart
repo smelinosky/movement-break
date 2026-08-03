@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../settings/settings_screen.dart';
 import '../video/video_screen.dart';
+import '../../widgets/lets_move_button.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -133,53 +134,13 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildMoveButton(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Start a Movement Break',
-      child: InkWell(
-        borderRadius: BorderRadius.circular(100),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute<void>(builder: (context) => const VideoScreen()),
-          );
-        },
-        child: Ink(
-          width: 210,
-          height: 210,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.primaryGreen,
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x6625E987),
-                blurRadius: 34,
-                spreadRadius: 5,
-              ),
-            ],
-            border: Border.all(color: AppColors.softGreen, width: 3),
-          ),
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.directions_walk_rounded,
-                size: 64,
-                color: AppColors.backgroundDark,
-              ),
-              SizedBox(height: 10),
-              Text(
-                "LET'S MOVE!",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.backgroundDark,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return LetsMoveButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (context) => const VideoScreen()),
+        );
+      },
     );
   }
 
