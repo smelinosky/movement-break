@@ -14,4 +14,5 @@ abstract final class AppColors {
 
   static const Color inactive = Color(0xFF49665D);
   static const Color error = Color(0xFFFF6B6B);
+  static const Color border = Color(0xFF31594D);
 }

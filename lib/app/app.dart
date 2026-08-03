@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/splash/splash_screen.dart';
+import 'screens/home/home_screen.dart';
 import 'theme/app_theme.dart';
 
 class MovementBreakApp extends StatelessWidget {
@@ -12,7 +12,7 @@ class MovementBreakApp extends StatelessWidget {
       title: 'Movement Break',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const SplashScreen(),
+      home: const HomeScreen(),
     );
   }
 }
