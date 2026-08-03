@@ -1,9 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../theme/app_colors.dart';
 
-class VideoScreen extends StatelessWidget {
+class VideoScreen extends StatefulWidget {
   const VideoScreen({super.key});
+
+  @override
+  State<VideoScreen> createState() => _VideoScreenState();
+}
+
+class _VideoScreenState extends State<VideoScreen> {
+  late final YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: '2YmJyQy8lhM',
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: false,
+        playsInline: true,
+        enableCaption: true,
+        strictRelatedVideos: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
+  }
+
+  void _skipMovement() {
+    _controller.pauseVideo();
+    Navigator.pop(context);
+  }
+
+  void _chooseDifferentMovement() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('A different movement will load here.')),
+    );
+  }
+
+  void _completeMovement() {
+    _controller.pauseVideo();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Completion screen will open here.')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,6 +63,7 @@ class VideoScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Movement Break')),
       body: Container(
         width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -23,65 +74,35 @@ class VideoScreen extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
-                  height: 230,
                   decoration: BoxDecoration(
                     color: Colors.black,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.play_circle_outline,
-                          size: 72,
-                          color: AppColors.primaryGreen,
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          'YouTube video will appear here',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
+                  clipBehavior: Clip.antiAlias,
+                  child: YoutubePlayer(
+                    controller: _controller,
+                    aspectRatio: 16 / 9,
                   ),
                 ),
-                const SizedBox(height: 28),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Skip'),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
+                TextButton(onPressed: _skipMovement, child: const Text('Skip')),
+                const SizedBox(height: 8),
                 OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('A different movement will load here.'),
-                      ),
-                    );
-                  },
+                  onPressed: _chooseDifferentMovement,
                   child: const Text('Choose a Different Movement'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Completion screen coming next.'),
-                      ),
-                    );
-                  },
+                  onPressed: _completeMovement,
                   child: const Text('Done'),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 18),
                 Text(
                   'Take your time. Move in a way that feels comfortable.',
                   textAlign: TextAlign.center,
