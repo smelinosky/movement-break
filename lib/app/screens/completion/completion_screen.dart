@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 
-class CompletionScreen extends StatelessWidget {
-  const CompletionScreen({
-    required this.completedBreaks,
-    required this.dailyGoal,
-    super.key,
-  });
+import 'package:provider/provider.dart';
 
-  final int completedBreaks;
-  final int dailyGoal;
+import '../../providers/app_state.dart';
+
+class CompletionScreen extends StatelessWidget {
+  const CompletionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final appState = context.watch<AppState>();
+    final completedBreaks = appState.completedBreaks;
+    final dailyGoal = appState.dailyGoal;
     final safeGoal = dailyGoal <= 0 ? 1 : dailyGoal;
     final progress = (completedBreaks / safeGoal).clamp(0.0, 1.0);
 
@@ -55,7 +54,12 @@ class CompletionScreen extends StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 36),
-                _buildProgressCard(context, progress: progress),
+                _buildProgressCard(
+                  context,
+                  completedBreaks: completedBreaks,
+                  dailyGoal: dailyGoal,
+                  progress: progress,
+                ),
                 const SizedBox(height: 24),
                 _buildAdPlaceholder(context),
                 const SizedBox(height: 24),
@@ -93,9 +97,13 @@ class CompletionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressCard(BuildContext context, {required double progress}) {
+  Widget _buildProgressCard(
+    BuildContext context, {
+    required int completedBreaks,
+    required int dailyGoal,
+    required double progress,
+  }) {
     final theme = Theme.of(context);
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -133,7 +141,10 @@ class CompletionScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            _progressMessage(),
+            _progressMessage(
+              completedBreaks: completedBreaks,
+              dailyGoal: dailyGoal,
+            ),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium,
           ),
@@ -142,7 +153,10 @@ class CompletionScreen extends StatelessWidget {
     );
   }
 
-  String _progressMessage() {
+  String _progressMessage({
+    required int completedBreaks,
+    required int dailyGoal,
+  }) {
     if (completedBreaks >= dailyGoal) {
       return 'You reached your movement goal today.';
     }

@@ -7,6 +7,8 @@ import '../../models/movement_video.dart';
 import '../../services/youtube_playlist_service.dart';
 import '../../theme/app_colors.dart';
 import '../completion/completion_screen.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_state.dart';
 
 class VideoScreen extends StatefulWidget {
   const VideoScreen({super.key});
@@ -159,12 +161,11 @@ class _VideoScreenState extends State<VideoScreen> {
       return;
     }
 
+    context.read<AppState>().completeMovement();
+
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute<void>(
-        builder: (context) =>
-            const CompletionScreen(completedBreaks: 4, dailyGoal: 8),
-      ),
+      MaterialPageRoute<void>(builder: (context) => const CompletionScreen()),
     );
   }
 

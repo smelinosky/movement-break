@@ -4,17 +4,16 @@ import '../../theme/app_colors.dart';
 import '../settings/settings_screen.dart';
 import '../video/video_screen.dart';
 import '../../widgets/lets_move_button.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_state.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  static const int completedBreaks = 3;
-  static const int dailyGoal = 8;
-
   @override
   Widget build(BuildContext context) {
-    final progress = completedBreaks / dailyGoal;
-
+    final appState = context.watch<AppState>();
+    final progress = appState.dailyProgress;
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -32,7 +31,12 @@ class HomeScreen extends StatelessWidget {
               children: [
                 _buildHeader(context),
                 const SizedBox(height: 42),
-                _buildProgressSection(context, progress: progress),
+                _buildProgressSection(
+                  context,
+                  completedBreaks: appState.completedBreaks,
+                  dailyGoal: appState.dailyGoal,
+                  progress: progress,
+                ),
                 const SizedBox(height: 42),
                 _buildMoveButton(context),
                 const SizedBox(height: 44),
@@ -85,6 +89,8 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildProgressSection(
     BuildContext context, {
+    required int completedBreaks,
+    required int dailyGoal,
     required double progress,
   }) {
     final theme = Theme.of(context);
