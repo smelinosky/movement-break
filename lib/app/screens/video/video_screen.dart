@@ -6,6 +6,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../models/movement_video.dart';
 import '../../services/youtube_playlist_service.dart';
 import '../../theme/app_colors.dart';
+import '../completion/completion_screen.dart';
 
 class VideoScreen extends StatefulWidget {
   const VideoScreen({super.key});
@@ -158,8 +159,12 @@ class _VideoScreenState extends State<VideoScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Completion screen will open here.')),
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) =>
+            const CompletionScreen(completedBreaks: 4, dailyGoal: 8),
+      ),
     );
   }
 
@@ -246,7 +251,6 @@ class _VideoScreenState extends State<VideoScreen> {
             child: YoutubePlayer(controller: _controller, aspectRatio: 16 / 9),
           ),
           const SizedBox(height: 16),
-
           if (_currentVideo != null)
             Text(
               _currentVideo!.title,
@@ -255,12 +259,9 @@ class _VideoScreenState extends State<VideoScreen> {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleMedium,
             ),
-
           const SizedBox(height: 20),
-
           TextButton(onPressed: _skipMovement, child: const Text('Skip')),
           const SizedBox(height: 8),
-
           OutlinedButton(
             onPressed: _isChangingVideo ? null : _chooseDifferentMovement,
             child: _isChangingVideo
@@ -272,13 +273,11 @@ class _VideoScreenState extends State<VideoScreen> {
                 : const Text('Choose a Different Movement'),
           ),
           const SizedBox(height: 12),
-
           ElevatedButton(
             onPressed: _completeMovement,
             child: const Text('Done'),
           ),
           const SizedBox(height: 18),
-
           Text(
             'Take your time. Move in a way that feels comfortable.',
             textAlign: TextAlign.center,
