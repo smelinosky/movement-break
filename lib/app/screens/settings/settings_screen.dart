@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 
+import 'package:provider/provider.dart';
+
+import '../../providers/app_state.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -14,7 +18,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   TimeOfDay startTime = const TimeOfDay(hour: 13, minute: 0);
   TimeOfDay endTime = const TimeOfDay(hour: 17, minute: 0);
   int reminderInterval = 45;
-  int dailyGoal = 4;
   bool soundEnabled = true;
   bool vibrationEnabled = true;
 
@@ -111,6 +114,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: Container(
@@ -164,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               _buildSectionTitle('DAILY GOAL'),
               const SizedBox(height: 10),
-              _buildSettingsCard(children: [_buildGoalRow()]),
+              _buildSettingsCard(children: [_buildGoalRow(appState)]),
               const SizedBox(height: 28),
 
               _buildSectionTitle('NOTIFICATIONS'),
@@ -288,7 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildGoalRow() {
+  Widget _buildGoalRow(AppState appState) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       child: Row(
@@ -310,19 +315,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           IconButton(
             tooltip: 'Decrease goal',
-            onPressed: dailyGoal > 1
-                ? () {
-                    setState(() {
-                      dailyGoal--;
-                    });
+            onPressed: appState.dailyGoal > 1
+                ? () async {
+                    await context.read<AppState>().setDailyGoal(
+                      appState.dailyGoal - 1,
+                    );
                   }
                 : null,
             icon: const Icon(Icons.remove_circle_outline),
           ),
           SizedBox(
-            width: 28,
+            width: 32,
             child: Text(
-              '$dailyGoal',
+              '${appState.dailyGoal}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppColors.primaryGreen,
@@ -333,10 +338,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           IconButton(
             tooltip: 'Increase goal',
-            onPressed: () {
-              setState(() {
-                dailyGoal++;
-              });
+            onPressed: () async {
+              await context.read<AppState>().setDailyGoal(
+                appState.dailyGoal + 1,
+              );
             },
             icon: const Icon(Icons.add_circle_outline),
           ),

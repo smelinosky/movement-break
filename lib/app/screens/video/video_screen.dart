@@ -161,7 +161,10 @@ class _VideoScreenState extends State<VideoScreen> {
       return;
     }
 
-    context.read<AppState>().completeMovement();
+    await context.read<AppState>().completeMovement();
+    if (!mounted) {
+      return;
+    }
 
     Navigator.pushReplacement(
       context,

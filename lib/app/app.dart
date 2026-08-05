@@ -6,12 +6,14 @@ import 'screens/home/home_screen.dart';
 import 'theme/app_theme.dart';
 
 class MovementBreakApp extends StatelessWidget {
-  const MovementBreakApp({super.key});
+  const MovementBreakApp({required this.appState, super.key});
+
+  final AppState appState;
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppState(),
+    return ChangeNotifierProvider<AppState>.value(
+      value: appState,
       child: MaterialApp(
         title: 'Movement Break',
         debugShowCheckedModeBanner: false,
