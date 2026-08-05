@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
-import '../../theme/app_colors.dart';
-
 import 'package:provider/provider.dart';
 
 import '../../providers/app_state.dart';
+import '../../theme/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,10 +14,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   String selectedDays = 'Weekdays';
   TimeOfDay startTime = const TimeOfDay(hour: 13, minute: 0);
+
   TimeOfDay endTime = const TimeOfDay(hour: 17, minute: 0);
   int reminderInterval = 45;
-  bool soundEnabled = true;
-  bool vibrationEnabled = true;
 
   Future<void> _selectStartTime() async {
     final selectedTime = await showTimePicker(
@@ -166,22 +163,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: 28),
-
               _buildSectionTitle('DAILY GOAL'),
               const SizedBox(height: 10),
               _buildSettingsCard(children: [_buildGoalRow(appState)]),
               const SizedBox(height: 28),
-
               _buildSectionTitle('NOTIFICATIONS'),
               const SizedBox(height: 10),
               _buildSettingsCard(
                 children: [
                   CheckboxListTile(
-                    value: soundEnabled,
-                    onChanged: (value) {
-                      setState(() {
-                        soundEnabled = value ?? false;
-                      });
+                    value: appState.soundEnabled,
+                    onChanged: (value) async {
+                      if (value != null) {
+                        await context.read<AppState>().setSoundEnabled(value);
+                      }
                     },
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
@@ -196,11 +191,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   _buildDivider(),
                   CheckboxListTile(
-                    value: vibrationEnabled,
-                    onChanged: (value) {
-                      setState(() {
-                        vibrationEnabled = value ?? false;
-                      });
+                    value: appState.vibrationEnabled,
+                    onChanged: (value) async {
+                      if (value != null) {
+                        await context.read<AppState>().setVibrationEnabled(
+                          value,
+                        );
+                      }
                     },
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
@@ -216,7 +213,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: 28),
-
               _buildSectionTitle('ABOUT'),
               const SizedBox(height: 10),
               _buildSettingsCard(
