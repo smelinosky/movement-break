@@ -4,114 +4,42 @@ import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_colors.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
+  static const Map<int, String> _weekdayNames = {
+    DateTime.monday: 'Monday',
+    DateTime.tuesday: 'Tuesday',
+    DateTime.wednesday: 'Wednesday',
+    DateTime.thursday: 'Thursday',
+    DateTime.friday: 'Friday',
+    DateTime.saturday: 'Saturday',
+    DateTime.sunday: 'Sunday',
+  };
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  String selectedDays = 'Weekdays';
-  TimeOfDay startTime = const TimeOfDay(hour: 13, minute: 0);
-
-  TimeOfDay endTime = const TimeOfDay(hour: 17, minute: 0);
-  int reminderInterval = 45;
-
-  Future<void> _selectStartTime() async {
-    final selectedTime = await showTimePicker(
-      context: context,
-      initialTime: startTime,
-    );
-
-    if (selectedTime != null) {
-      setState(() {
-        startTime = selectedTime;
-      });
-    }
-  }
-
-  Future<void> _selectEndTime() async {
-    final selectedTime = await showTimePicker(
-      context: context,
-      initialTime: endTime,
-    );
-
-    if (selectedTime != null) {
-      setState(() {
-        endTime = selectedTime;
-      });
-    }
-  }
-
-  Future<void> _selectDays() async {
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildChoiceTile(context, title: 'Weekdays', value: 'Weekdays'),
-              _buildChoiceTile(context, title: 'Every Day', value: 'Every Day'),
-              _buildChoiceTile(context, title: 'Custom', value: 'Custom'),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (result != null) {
-      setState(() {
-        selectedDays = result;
-      });
-    }
-  }
-
-  Future<void> _selectInterval() async {
-    final result = await showModalBottomSheet<int>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildChoiceTile(context, title: 'Every 30 minutes', value: 30),
-              _buildChoiceTile(context, title: 'Every 45 minutes', value: 45),
-              _buildChoiceTile(context, title: 'Every 60 minutes', value: 60),
-              _buildChoiceTile(context, title: 'Every 90 minutes', value: 90),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (result != null) {
-      setState(() {
-        reminderInterval = result;
-      });
-    }
-  }
-
-  Widget _buildChoiceTile<T>(
-    BuildContext context, {
-    required String title,
-    required T value,
-  }) {
-    return ListTile(
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        Navigator.pop(context, value);
-      },
-    );
-  }
+  static const Map<int, String> _weekdayAbbreviations = {
+    DateTime.monday: 'Mon',
+    DateTime.tuesday: 'Tue',
+    DateTime.wednesday: 'Wed',
+    DateTime.thursday: 'Thu',
+    DateTime.friday: 'Fri',
+    DateTime.saturday: 'Sat',
+    DateTime.sunday: 'Sun',
+  };
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+
+    final startTime = TimeOfDay(
+      hour: appState.startHour,
+      minute: appState.startMinute,
+    );
+
+    final endTime = TimeOfDay(
+      hour: appState.endHour,
+      minute: appState.endMinute,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -136,37 +64,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildNavigationRow(
                     icon: Icons.calendar_today_outlined,
                     title: 'Days',
-                    value: selectedDays,
-                    onTap: _selectDays,
+                    value: _formatReminderDays(appState.reminderDays),
+                    onTap: () {
+                      _selectReminderDays(context, appState);
+                    },
                   ),
                   _buildDivider(),
                   _buildNavigationRow(
                     icon: Icons.play_circle_outline,
                     title: 'Start Time',
                     value: startTime.format(context),
-                    onTap: _selectStartTime,
+                    onTap: () {
+                      _selectStartTime(context, appState);
+                    },
                   ),
                   _buildDivider(),
                   _buildNavigationRow(
                     icon: Icons.stop_circle_outlined,
                     title: 'End Time',
                     value: endTime.format(context),
-                    onTap: _selectEndTime,
+                    onTap: () {
+                      _selectEndTime(context, appState);
+                    },
                   ),
                   _buildDivider(),
                   _buildNavigationRow(
                     icon: Icons.timer_outlined,
                     title: 'Interval',
-                    value: 'Every $reminderInterval minutes',
-                    onTap: _selectInterval,
+                    value: 'Every ${appState.reminderInterval} minutes',
+                    onTap: () {
+                      _selectInterval(context, appState);
+                    },
                   ),
                 ],
               ),
               const SizedBox(height: 28),
+
               _buildSectionTitle('DAILY GOAL'),
               const SizedBox(height: 10),
-              _buildSettingsCard(children: [_buildGoalRow(appState)]),
+              _buildSettingsCard(children: [_buildGoalRow(context, appState)]),
               const SizedBox(height: 28),
+
               _buildSectionTitle('NOTIFICATIONS'),
               const SizedBox(height: 10),
               _buildSettingsCard(
@@ -174,9 +112,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   CheckboxListTile(
                     value: appState.soundEnabled,
                     onChanged: (value) async {
-                      if (value != null) {
-                        await context.read<AppState>().setSoundEnabled(value);
+                      if (value == null) {
+                        return;
                       }
+
+                      await context.read<AppState>().setSoundEnabled(value);
                     },
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
@@ -193,11 +133,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   CheckboxListTile(
                     value: appState.vibrationEnabled,
                     onChanged: (value) async {
-                      if (value != null) {
-                        await context.read<AppState>().setVibrationEnabled(
-                          value,
-                        );
+                      if (value == null) {
+                        return;
                       }
+
+                      await context.read<AppState>().setVibrationEnabled(value);
                     },
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
@@ -213,21 +153,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: 28),
+
               _buildSectionTitle('ABOUT'),
               const SizedBox(height: 10),
               _buildSettingsCard(
                 children: [
                   _buildStaticRow(
+                    context,
                     icon: Icons.info_outline,
                     title: 'About Movement Break',
                   ),
                   _buildDivider(),
                   _buildStaticRow(
+                    context,
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy Policy',
                   ),
                   _buildDivider(),
                   _buildStaticRow(
+                    context,
                     icon: Icons.description_outlined,
                     title: 'Terms of Use',
                   ),
@@ -243,6 +187,280 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _selectStartTime(BuildContext context, AppState appState) async {
+    final currentStartTime = TimeOfDay(
+      hour: appState.startHour,
+      minute: appState.startMinute,
+    );
+
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: currentStartTime,
+    );
+
+    if (selectedTime == null || !context.mounted) {
+      return;
+    }
+
+    final selectedMinutes = _timeInMinutes(selectedTime);
+
+    final endMinutes = _timeInMinutes(
+      TimeOfDay(hour: appState.endHour, minute: appState.endMinute),
+    );
+
+    if (selectedMinutes >= endMinutes) {
+      _showMessage(context, 'Start time must be before the end time.');
+      return;
+    }
+
+    await context.read<AppState>().setStartTime(
+      hour: selectedTime.hour,
+      minute: selectedTime.minute,
+    );
+  }
+
+  Future<void> _selectEndTime(BuildContext context, AppState appState) async {
+    final currentEndTime = TimeOfDay(
+      hour: appState.endHour,
+      minute: appState.endMinute,
+    );
+
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: currentEndTime,
+    );
+
+    if (selectedTime == null || !context.mounted) {
+      return;
+    }
+
+    final selectedMinutes = _timeInMinutes(selectedTime);
+
+    final startMinutes = _timeInMinutes(
+      TimeOfDay(hour: appState.startHour, minute: appState.startMinute),
+    );
+
+    if (selectedMinutes <= startMinutes) {
+      _showMessage(context, 'End time must be after the start time.');
+      return;
+    }
+
+    await context.read<AppState>().setEndTime(
+      hour: selectedTime.hour,
+      minute: selectedTime.minute,
+    );
+  }
+
+  Future<void> _selectInterval(BuildContext context, AppState appState) async {
+    final result = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildIntervalTile(
+                bottomSheetContext,
+                interval: 30,
+                currentInterval: appState.reminderInterval,
+              ),
+              _buildIntervalTile(
+                bottomSheetContext,
+                interval: 45,
+                currentInterval: appState.reminderInterval,
+              ),
+              _buildIntervalTile(
+                bottomSheetContext,
+                interval: 60,
+                currentInterval: appState.reminderInterval,
+              ),
+              _buildIntervalTile(
+                bottomSheetContext,
+                interval: 90,
+                currentInterval: appState.reminderInterval,
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Custom'),
+                subtitle: const Text('Enter any interval in minutes'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(bottomSheetContext, -1);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result == null || !context.mounted) {
+      return;
+    }
+
+    if (result == -1) {
+      await _selectCustomInterval(context, appState);
+      return;
+    }
+
+    await context.read<AppState>().setReminderInterval(result);
+  }
+
+  Future<void> _selectCustomInterval(
+    BuildContext context,
+    AppState appState,
+  ) async {
+    final controller = TextEditingController(
+      text: appState.reminderInterval.toString(),
+    );
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Custom Interval'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Minutes',
+              hintText: 'For example, 45',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final minutes = int.tryParse(controller.text.trim());
+
+                if (minutes == null || minutes < 1) {
+                  return;
+                }
+
+                Navigator.pop(dialogContext, minutes);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (result == null || !context.mounted) {
+      return;
+    }
+
+    await context.read<AppState>().setReminderInterval(result);
+  }
+
+  Future<void> _selectReminderDays(
+    BuildContext context,
+    AppState appState,
+  ) async {
+    final selectedDays = appState.reminderDays.toSet();
+
+    final result = await showModalBottomSheet<List<int>>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Reminder Days',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    for (final entry in _weekdayNames.entries)
+                      CheckboxListTile(
+                        value: selectedDays.contains(entry.key),
+                        title: Text(entry.value),
+                        controlAffinity: ListTileControlAffinity.trailing,
+                        onChanged: (selected) {
+                          setModalState(() {
+                            if (selected == true) {
+                              selectedDays.add(entry.key);
+                            } else {
+                              selectedDays.remove(entry.key);
+                            }
+                          });
+                        },
+                      ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (selectedDays.isEmpty) {
+                          ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Select at least one reminder day.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final sortedDays = selectedDays.toList()..sort();
+
+                        Navigator.pop(bottomSheetContext, sortedDays);
+                      },
+                      child: const Text('Done'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null || !context.mounted) {
+      return;
+    }
+
+    await context.read<AppState>().setReminderDays(result);
+  }
+
+  Widget _buildIntervalTile(
+    BuildContext context, {
+    required int interval,
+    required int currentInterval,
+  }) {
+    final selected = interval == currentInterval;
+
+    return ListTile(
+      leading: Icon(
+        selected ? Icons.check_circle : Icons.circle_outlined,
+        color: selected ? AppColors.primaryGreen : AppColors.textSecondary,
+      ),
+      title: Text('Every $interval minutes'),
+      onTap: () {
+        Navigator.pop(context, interval);
+      },
     );
   }
 
@@ -289,7 +507,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildGoalRow(AppState appState) {
+  Widget _buildGoalRow(BuildContext context, AppState appState) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       child: Row(
@@ -346,16 +564,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildStaticRow({required IconData icon, required String title}) {
+  Widget _buildStaticRow(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+  }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
       leading: Icon(icon),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$title will be added before launch.')),
-        );
+        _showMessage(context, '$title will be added before launch.');
       },
     );
   }
@@ -378,5 +598,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildDivider() {
     return const Divider(height: 1, indent: 58);
+  }
+
+  String _formatReminderDays(List<int> days) {
+    final sortedDays = List<int>.from(days)..sort();
+
+    const weekdays = [
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.thursday,
+      DateTime.friday,
+    ];
+
+    const everyDay = [
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.thursday,
+      DateTime.friday,
+      DateTime.saturday,
+      DateTime.sunday,
+    ];
+
+    if (_listsAreEqual(sortedDays, weekdays)) {
+      return 'Weekdays';
+    }
+
+    if (_listsAreEqual(sortedDays, everyDay)) {
+      return 'Every Day';
+    }
+
+    return sortedDays
+        .map((day) => _weekdayAbbreviations[day])
+        .whereType<String>()
+        .join(', ');
+  }
+
+  bool _listsAreEqual(List<int> first, List<int> second) {
+    if (first.length != second.length) {
+      return false;
+    }
+
+    for (var index = 0; index < first.length; index++) {
+      if (first[index] != second[index]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  int _timeInMinutes(TimeOfDay time) {
+    return (time.hour * 60) + time.minute;
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
