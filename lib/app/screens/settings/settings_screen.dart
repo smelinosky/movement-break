@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/app_state.dart';
+import '../../services/notification_service.dart';
 import '../../theme/app_colors.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -42,14 +43,19 @@ class SettingsScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.background, AppColors.backgroundDark],
+            colors: [
+              AppColors.background,
+              AppColors.backgroundDark,
+            ],
           ),
         ),
         child: SafeArea(
@@ -64,9 +70,14 @@ class SettingsScreen extends StatelessWidget {
                   _buildNavigationRow(
                     icon: Icons.calendar_today_outlined,
                     title: 'Days',
-                    value: _formatReminderDays(appState.reminderDays),
+                    value: _formatReminderDays(
+                      appState.reminderDays,
+                    ),
                     onTap: () {
-                      _selectReminderDays(context, appState);
+                      _selectReminderDays(
+                        context,
+                        appState,
+                      );
                     },
                   ),
                   _buildDivider(),
@@ -75,7 +86,10 @@ class SettingsScreen extends StatelessWidget {
                     title: 'Start Time',
                     value: startTime.format(context),
                     onTap: () {
-                      _selectStartTime(context, appState);
+                      _selectStartTime(
+                        context,
+                        appState,
+                      );
                     },
                   ),
                   _buildDivider(),
@@ -84,16 +98,23 @@ class SettingsScreen extends StatelessWidget {
                     title: 'End Time',
                     value: endTime.format(context),
                     onTap: () {
-                      _selectEndTime(context, appState);
+                      _selectEndTime(
+                        context,
+                        appState,
+                      );
                     },
                   ),
                   _buildDivider(),
                   _buildNavigationRow(
                     icon: Icons.timer_outlined,
                     title: 'Interval',
-                    value: 'Every ${appState.reminderInterval} minutes',
+                    value:
+                        'Every ${appState.reminderInterval} minutes',
                     onTap: () {
-                      _selectInterval(context, appState);
+                      _selectInterval(
+                        context,
+                        appState,
+                      );
                     },
                   ),
                 ],
@@ -102,7 +123,14 @@ class SettingsScreen extends StatelessWidget {
 
               _buildSectionTitle('DAILY GOAL'),
               const SizedBox(height: 10),
-              _buildSettingsCard(children: [_buildGoalRow(context, appState)]),
+              _buildSettingsCard(
+                children: [
+                  _buildGoalRow(
+                    context,
+                    appState,
+                  ),
+                ],
+              ),
               const SizedBox(height: 28),
 
               _buildSectionTitle('NOTIFICATIONS'),
@@ -116,18 +144,23 @@ class SettingsScreen extends StatelessWidget {
                         return;
                       }
 
-                      await context.read<AppState>().setSoundEnabled(value);
+                      await context
+                          .read<AppState>()
+                          .setSoundEnabled(value);
                     },
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 4,
                     ),
-                    secondary: const Icon(Icons.volume_up_outlined),
+                    secondary: const Icon(
+                      Icons.volume_up_outlined,
+                    ),
                     title: const Text('Sound'),
                     subtitle: const Text(
                       'Play a sound with Movement Break reminders',
                     ),
-                    controlAffinity: ListTileControlAffinity.trailing,
+                    controlAffinity:
+                        ListTileControlAffinity.trailing,
                   ),
                   _buildDivider(),
                   CheckboxListTile(
@@ -137,18 +170,23 @@ class SettingsScreen extends StatelessWidget {
                         return;
                       }
 
-                      await context.read<AppState>().setVibrationEnabled(value);
+                      await context
+                          .read<AppState>()
+                          .setVibrationEnabled(value);
                     },
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 4,
                     ),
-                    secondary: const Icon(Icons.vibration_outlined),
+                    secondary: const Icon(
+                      Icons.vibration_outlined,
+                    ),
                     title: const Text('Vibration'),
                     subtitle: const Text(
                       'Vibrate with Movement Break reminders',
                     ),
-                    controlAffinity: ListTileControlAffinity.trailing,
+                    controlAffinity:
+                        ListTileControlAffinity.trailing,
                   ),
                 ],
               ),
@@ -183,6 +221,38 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 28),
+
+              _buildSectionTitle('DEVELOPER'),
+              const SizedBox(height: 10),
+              _buildSettingsCard(
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 6,
+                    ),
+                    leading: const Icon(
+                      Icons.notification_add_outlined,
+                    ),
+                    title: const Text(
+                      'Send Test Notification',
+                    ),
+                    subtitle: const Text(
+                      'Immediately test sound, vibration, and notification permissions',
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                    ),
+                    onTap: () {
+                      _sendTestNotification(
+                        context,
+                        appState,
+                      );
+                    },
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -190,7 +260,69 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _selectStartTime(BuildContext context, AppState appState) async {
+  Future<void> _sendTestNotification(
+    BuildContext context,
+    AppState appState,
+  ) async {
+    final notificationService = NotificationService();
+
+    try {
+      await notificationService.initialize(
+        onNotificationTapped: (payload) {
+          debugPrint(
+            'Test notification tapped with payload: $payload',
+          );
+        },
+      );
+
+      final permissionGranted =
+          await notificationService.requestPermission();
+
+      if (!context.mounted) {
+        return;
+      }
+
+      if (!permissionGranted) {
+        _showMessage(
+          context,
+          'Notification permission is not enabled.',
+        );
+        return;
+      }
+
+      await notificationService.showTestNotification(
+        soundEnabled: appState.soundEnabled,
+        vibrationEnabled: appState.vibrationEnabled,
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+
+      _showMessage(
+        context,
+        'Test notification sent.',
+      );
+    } catch (error) {
+      debugPrint(
+        'Test notification error: $error',
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+
+      _showMessage(
+        context,
+        'The test notification could not be sent.',
+      );
+    }
+  }
+
+  Future<void> _selectStartTime(
+    BuildContext context,
+    AppState appState,
+  ) async {
     final currentStartTime = TimeOfDay(
       hour: appState.startHour,
       minute: appState.startMinute,
@@ -208,11 +340,17 @@ class SettingsScreen extends StatelessWidget {
     final selectedMinutes = _timeInMinutes(selectedTime);
 
     final endMinutes = _timeInMinutes(
-      TimeOfDay(hour: appState.endHour, minute: appState.endMinute),
+      TimeOfDay(
+        hour: appState.endHour,
+        minute: appState.endMinute,
+      ),
     );
 
     if (selectedMinutes >= endMinutes) {
-      _showMessage(context, 'Start time must be before the end time.');
+      _showMessage(
+        context,
+        'Start time must be before the end time.',
+      );
       return;
     }
 
@@ -222,7 +360,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _selectEndTime(BuildContext context, AppState appState) async {
+  Future<void> _selectEndTime(
+    BuildContext context,
+    AppState appState,
+  ) async {
     final currentEndTime = TimeOfDay(
       hour: appState.endHour,
       minute: appState.endMinute,
@@ -240,11 +381,17 @@ class SettingsScreen extends StatelessWidget {
     final selectedMinutes = _timeInMinutes(selectedTime);
 
     final startMinutes = _timeInMinutes(
-      TimeOfDay(hour: appState.startHour, minute: appState.startMinute),
+      TimeOfDay(
+        hour: appState.startHour,
+        minute: appState.startMinute,
+      ),
     );
 
     if (selectedMinutes <= startMinutes) {
-      _showMessage(context, 'End time must be after the start time.');
+      _showMessage(
+        context,
+        'End time must be after the start time.',
+      );
       return;
     }
 
@@ -254,7 +401,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _selectInterval(BuildContext context, AppState appState) async {
+  Future<void> _selectInterval(
+    BuildContext context,
+    AppState appState,
+  ) async {
     final result = await showModalBottomSheet<int>(
       context: context,
       backgroundColor: AppColors.surface,
@@ -285,12 +435,21 @@ class SettingsScreen extends StatelessWidget {
                 currentInterval: appState.reminderInterval,
               ),
               ListTile(
-                leading: const Icon(Icons.edit_outlined),
+                leading: const Icon(
+                  Icons.edit_outlined,
+                ),
                 title: const Text('Custom'),
-                subtitle: const Text('Enter any interval in minutes'),
-                trailing: const Icon(Icons.chevron_right),
+                subtitle: const Text(
+                  'Enter any interval in minutes',
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                ),
                 onTap: () {
-                  Navigator.pop(bottomSheetContext, -1);
+                  Navigator.pop(
+                    bottomSheetContext,
+                    -1,
+                  );
                 },
               ),
             ],
@@ -304,11 +463,16 @@ class SettingsScreen extends StatelessWidget {
     }
 
     if (result == -1) {
-      await _selectCustomInterval(context, appState);
+      await _selectCustomInterval(
+        context,
+        appState,
+      );
       return;
     }
 
-    await context.read<AppState>().setReminderInterval(result);
+    await context
+        .read<AppState>()
+        .setReminderInterval(result);
   }
 
   Future<void> _selectCustomInterval(
@@ -342,13 +506,18 @@ class SettingsScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                final minutes = int.tryParse(controller.text.trim());
+                final minutes = int.tryParse(
+                  controller.text.trim(),
+                );
 
                 if (minutes == null || minutes < 1) {
                   return;
                 }
 
-                Navigator.pop(dialogContext, minutes);
+                Navigator.pop(
+                  dialogContext,
+                  minutes,
+                );
               },
               child: const Text('Save'),
             ),
@@ -363,7 +532,9 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
-    await context.read<AppState>().setReminderInterval(result);
+    await context
+        .read<AppState>()
+        .setReminderInterval(result);
   }
 
   Future<void> _selectReminderDays(
@@ -382,7 +553,12 @@ class SettingsScreen extends StatelessWidget {
           builder: (context, setModalState) {
             return SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                padding: const EdgeInsets.fromLTRB(
+                  16,
+                  0,
+                  16,
+                  20,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -396,9 +572,12 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     for (final entry in _weekdayNames.entries)
                       CheckboxListTile(
-                        value: selectedDays.contains(entry.key),
+                        value: selectedDays.contains(
+                          entry.key,
+                        ),
                         title: Text(entry.value),
-                        controlAffinity: ListTileControlAffinity.trailing,
+                        controlAffinity:
+                            ListTileControlAffinity.trailing,
                         onChanged: (selected) {
                           setModalState(() {
                             if (selected == true) {
@@ -413,7 +592,9 @@ class SettingsScreen extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         if (selectedDays.isEmpty) {
-                          ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
+                          ScaffoldMessenger.of(
+                            bottomSheetContext,
+                          ).showSnackBar(
                             const SnackBar(
                               content: Text(
                                 'Select at least one reminder day.',
@@ -423,9 +604,13 @@ class SettingsScreen extends StatelessWidget {
                           return;
                         }
 
-                        final sortedDays = selectedDays.toList()..sort();
+                        final sortedDays =
+                            selectedDays.toList()..sort();
 
-                        Navigator.pop(bottomSheetContext, sortedDays);
+                        Navigator.pop(
+                          bottomSheetContext,
+                          sortedDays,
+                        );
                       },
                       child: const Text('Done'),
                     ),
@@ -442,7 +627,9 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
-    await context.read<AppState>().setReminderDays(result);
+    await context
+        .read<AppState>()
+        .setReminderDays(result);
   }
 
   Widget _buildIntervalTile(
@@ -454,12 +641,21 @@ class SettingsScreen extends StatelessWidget {
 
     return ListTile(
       leading: Icon(
-        selected ? Icons.check_circle : Icons.circle_outlined,
-        color: selected ? AppColors.primaryGreen : AppColors.textSecondary,
+        selected
+            ? Icons.check_circle
+            : Icons.circle_outlined,
+        color: selected
+            ? AppColors.primaryGreen
+            : AppColors.textSecondary,
       ),
-      title: Text('Every $interval minutes'),
+      title: Text(
+        'Every $interval minutes',
+      ),
       onTap: () {
-        Navigator.pop(context, interval);
+        Navigator.pop(
+          context,
+          interval,
+        );
       },
     );
   }
@@ -479,15 +675,21 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsCard({required List<Widget> children}) {
+  Widget _buildSettingsCard({
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: AppColors.border,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(children: children),
+      child: Column(
+        children: children,
+      ),
     );
   }
 
@@ -498,21 +700,34 @@ class SettingsScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 5,
+      ),
       leading: Icon(icon),
       title: Text(title),
       subtitle: Text(value),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const Icon(
+        Icons.chevron_right,
+      ),
       onTap: onTap,
     );
   }
 
-  Widget _buildGoalRow(BuildContext context, AppState appState) {
+  Widget _buildGoalRow(
+    BuildContext context,
+    AppState appState,
+  ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 14,
+      ),
       child: Row(
         children: [
-          const Icon(Icons.track_changes_outlined),
+          const Icon(
+            Icons.track_changes_outlined,
+          ),
           const SizedBox(width: 16),
           const Expanded(
             child: Column(
@@ -520,10 +735,15 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 Text(
                   'Movement Break Goal',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 SizedBox(height: 4),
-                Text('Completed breaks count toward your goal'),
+                Text(
+                  'Completed breaks count toward your goal',
+                ),
               ],
             ),
           ),
@@ -531,12 +751,16 @@ class SettingsScreen extends StatelessWidget {
             tooltip: 'Decrease goal',
             onPressed: appState.dailyGoal > 1
                 ? () async {
-                    await context.read<AppState>().setDailyGoal(
-                      appState.dailyGoal - 1,
-                    );
+                    await context
+                        .read<AppState>()
+                        .setDailyGoal(
+                          appState.dailyGoal - 1,
+                        );
                   }
                 : null,
-            icon: const Icon(Icons.remove_circle_outline),
+            icon: const Icon(
+              Icons.remove_circle_outline,
+            ),
           ),
           SizedBox(
             width: 32,
@@ -553,11 +777,15 @@ class SettingsScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Increase goal',
             onPressed: () async {
-              await context.read<AppState>().setDailyGoal(
-                appState.dailyGoal + 1,
-              );
+              await context
+                  .read<AppState>()
+                  .setDailyGoal(
+                    appState.dailyGoal + 1,
+                  );
             },
-            icon: const Icon(Icons.add_circle_outline),
+            icon: const Icon(
+              Icons.add_circle_outline,
+            ),
           ),
         ],
       ),
@@ -570,12 +798,20 @@ class SettingsScreen extends StatelessWidget {
     required String title,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 4,
+      ),
       leading: Icon(icon),
       title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const Icon(
+        Icons.chevron_right,
+      ),
       onTap: () {
-        _showMessage(context, '$title will be added before launch.');
+        _showMessage(
+          context,
+          '$title will be added before launch.',
+        );
       },
     );
   }
@@ -586,18 +822,26 @@ class SettingsScreen extends StatelessWidget {
     required String value,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 4,
+      ),
       leading: Icon(icon),
       title: Text(title),
       trailing: Text(
         value,
-        style: const TextStyle(color: AppColors.textSecondary),
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, indent: 58);
+    return const Divider(
+      height: 1,
+      indent: 58,
+    );
   }
 
   String _formatReminderDays(List<int> days) {
@@ -630,12 +874,17 @@ class SettingsScreen extends StatelessWidget {
     }
 
     return sortedDays
-        .map((day) => _weekdayAbbreviations[day])
+        .map(
+          (day) => _weekdayAbbreviations[day],
+        )
         .whereType<String>()
         .join(', ');
   }
 
-  bool _listsAreEqual(List<int> first, List<int> second) {
+  bool _listsAreEqual(
+    List<int> first,
+    List<int> second,
+  ) {
     if (first.length != second.length) {
       return false;
     }
@@ -653,9 +902,14 @@ class SettingsScreen extends StatelessWidget {
     return (time.hour * 60) + time.minute;
   }
 
-  void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  void _showMessage(
+    BuildContext context,
+    String message,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
   }
 }

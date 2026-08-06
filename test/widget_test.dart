@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movement_break/app/app.dart';
 import 'package:movement_break/app/providers/app_state.dart';
@@ -13,7 +14,12 @@ void main() {
 
     await appState.initialize();
 
-    await tester.pumpWidget(MovementBreakApp(appState: appState));
+    await tester.pumpWidget(
+      MovementBreakApp(
+        appState: appState,
+        navigatorKey: GlobalKey<NavigatorState>(),
+      ),
+    );
 
     expect(find.text('Movement Break'), findsOneWidget);
     expect(find.text("LET'S MOVE!"), findsOneWidget);

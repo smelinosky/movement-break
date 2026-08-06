@@ -2,10 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
-  NotificationService();
+  NotificationService._internal();
+
+  static final NotificationService _instance = NotificationService._internal();
+
+  factory NotificationService() => _instance;
 
   static const String movementChannelId = 'movement_break_reminders';
+
   static const String movementChannelName = 'Movement Break Reminders';
+
   static const String movementChannelDescription =
       'Reminders to take a short Movement Break.';
 
@@ -14,12 +20,18 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
+  bool _isInitialized = false;
+
   Future<void> initialize({
     void Function(String? payload)? onNotificationTapped,
   }) async {
-    const androidSettings = AndroidInitializationSettings(
-      'mipmap/ic_launcher',
-    );
+    // The plugin should only be initialized once.
+    // This preserves the navigation callback created in main.dart.
+    if (_isInitialized) {
+      return;
+    }
+
+    const androidSettings = AndroidInitializationSettings('mipmap/ic_launcher');
 
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -40,23 +52,26 @@ class NotificationService {
     );
 
     await _createAndroidNotificationChannel();
+
+    _isInitialized = true;
   }
 
   Future<bool> requestPermission() async {
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlugin != null) {
-      final granted =
-          await androidPlugin.requestNotificationsPermission();
+      final granted = await androidPlugin.requestNotificationsPermission();
 
       return granted ?? false;
     }
 
     final iosPlugin = _notifications
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
+          IOSFlutterLocalNotificationsPlugin
+        >();
 
     if (iosPlugin != null) {
       final granted = await iosPlugin.requestPermissions(
@@ -74,7 +89,8 @@ class NotificationService {
   Future<bool> areNotificationsEnabled() async {
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlugin != null) {
       return await androidPlugin.areNotificationsEnabled() ?? false;
@@ -87,6 +103,13 @@ class NotificationService {
     required bool soundEnabled,
     required bool vibrationEnabled,
   }) async {
+    if (!_isInitialized) {
+      throw StateError(
+        'NotificationService must be initialized before '
+        'showing notifications.',
+      );
+    }
+
     final androidDetails = AndroidNotificationDetails(
       movementChannelId,
       movementChannelName,
@@ -130,12 +153,11 @@ class NotificationService {
 
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlugin == null) {
-      debugPrint(
-        'Android notification implementation is unavailable.',
-      );
+      debugPrint('Android notification implementation is unavailable.');
       return;
     }
 
