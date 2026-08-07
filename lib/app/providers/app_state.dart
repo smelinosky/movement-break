@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
 
+import '../services/notification_scheduler.dart';
 import '../services/storage_service.dart';
 
 class AppState extends ChangeNotifier {
   AppState(this._storageService);
 
   final StorageService _storageService;
+
+  static const NotificationScheduler _notificationScheduler =
+      NotificationScheduler();
 
   int _completedBreaks = 0;
   int _dailyGoal = 4;
@@ -105,12 +109,19 @@ class AppState extends ChangeNotifier {
     }
 
     _reminderDays = List<int>.from(days)..sort();
+
     await _storageService.setReminderDays(_reminderDays);
 
     notifyListeners();
+
+    await _rescheduleNotifications();
   }
 
   Future<void> setStartTime({required int hour, required int minute}) async {
+    if (hour == _startHour && minute == _startMinute) {
+      return;
+    }
+
     _startHour = hour;
     _startMinute = minute;
 
@@ -118,9 +129,15 @@ class AppState extends ChangeNotifier {
     await _storageService.setStartMinute(minute);
 
     notifyListeners();
+
+    await _rescheduleNotifications();
   }
 
   Future<void> setEndTime({required int hour, required int minute}) async {
+    if (hour == _endHour && minute == _endMinute) {
+      return;
+    }
+
     _endHour = hour;
     _endMinute = minute;
 
@@ -128,6 +145,8 @@ class AppState extends ChangeNotifier {
     await _storageService.setEndMinute(minute);
 
     notifyListeners();
+
+    await _rescheduleNotifications();
   }
 
   Future<void> setReminderInterval(int minutes) async {
@@ -136,23 +155,40 @@ class AppState extends ChangeNotifier {
     }
 
     _reminderInterval = minutes;
+
     await _storageService.setReminderInterval(minutes);
 
     notifyListeners();
+
+    await _rescheduleNotifications();
   }
 
   Future<void> setSoundEnabled(bool value) async {
+    if (value == _soundEnabled) {
+      return;
+    }
+
     _soundEnabled = value;
+
     await _storageService.setSoundEnabled(value);
 
     notifyListeners();
+
+    await _rescheduleNotifications();
   }
 
   Future<void> setVibrationEnabled(bool value) async {
+    if (value == _vibrationEnabled) {
+      return;
+    }
+
     _vibrationEnabled = value;
+
     await _storageService.setVibrationEnabled(value);
 
     notifyListeners();
+
+    await _rescheduleNotifications();
   }
 
   Future<void> resetDailyProgress() async {
@@ -162,6 +198,20 @@ class AppState extends ChangeNotifier {
     await _storageService.setProgressDate(_dateKey(DateTime.now()));
 
     notifyListeners();
+  }
+
+  Future<void> _rescheduleNotifications() async {
+    if (!_isInitialized) {
+      return;
+    }
+
+    try {
+      await _notificationScheduler.scheduleNextSevenDays(appState: this);
+
+      debugPrint('Movement Break notifications rescheduled.');
+    } catch (error) {
+      debugPrint('Movement Break rescheduling error: $error');
+    }
   }
 
   Future<void> _resetIfNewDay() async {
@@ -180,7 +230,9 @@ class AppState extends ChangeNotifier {
 
   String _dateKey(DateTime date) {
     final year = date.year.toString().padLeft(4, '0');
+
     final month = date.month.toString().padLeft(2, '0');
+
     final day = date.day.toString().padLeft(2, '0');
 
     return '$year-$month-$day';

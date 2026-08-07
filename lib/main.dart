@@ -17,10 +17,6 @@ Future<void> main() async {
   final appState = AppState(storageService);
   await appState.initialize();
 
-  const notificationScheduler = NotificationScheduler();
-
-  notificationScheduler.debugPrintTodaySchedule(appState: appState);
-
   final navigatorKey = GlobalKey<NavigatorState>();
   final notificationService = NotificationService();
 
@@ -48,6 +44,12 @@ Future<void> main() async {
   final permissionGranted = await notificationService.requestPermission();
 
   debugPrint('Notification permission granted: $permissionGranted');
+
+  if (permissionGranted) {
+    const notificationScheduler = NotificationScheduler();
+
+    await notificationScheduler.scheduleNextSevenDays(appState: appState);
+  }
 
   runApp(MovementBreakApp(appState: appState, navigatorKey: navigatorKey));
 }

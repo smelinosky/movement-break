@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   NotificationService._internal();
@@ -21,12 +24,11 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _isInitialized = false;
+  bool _timeZoneInitialized = false;
 
   Future<void> initialize({
     void Function(String? payload)? onNotificationTapped,
   }) async {
-    // The plugin should only be initialized once.
-    // This preserves the navigation callback created in main.dart.
     if (_isInitialized) {
       return;
     }
@@ -52,6 +54,7 @@ class NotificationService {
     );
 
     await _createAndroidNotificationChannel();
+    await _initializeTimeZone();
 
     _isInitialized = true;
   }
@@ -103,31 +106,11 @@ class NotificationService {
     required bool soundEnabled,
     required bool vibrationEnabled,
   }) async {
-    if (!_isInitialized) {
-      throw StateError(
-        'NotificationService must be initialized before '
-        'showing notifications.',
-      );
-    }
+    _ensureInitialized();
 
-    final androidDetails = AndroidNotificationDetails(
-      movementChannelId,
-      movementChannelName,
-      channelDescription: movementChannelDescription,
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: soundEnabled,
-      enableVibration: vibrationEnabled,
-      ticker: 'Movement Break reminder',
-    );
-
-    final notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: soundEnabled,
-      ),
+    final notificationDetails = _buildNotificationDetails(
+      soundEnabled: soundEnabled,
+      vibrationEnabled: vibrationEnabled,
     );
 
     await _notifications.show(
@@ -139,8 +122,99 @@ class NotificationService {
     );
   }
 
+  Future<void> scheduleMovementNotification({
+    required int id,
+    required DateTime scheduledTime,
+    required bool soundEnabled,
+    required bool vibrationEnabled,
+  }) async {
+    _ensureInitialized();
+
+    if (!_timeZoneInitialized) {
+      await _initializeTimeZone();
+    }
+
+    final scheduledDate = tz.TZDateTime.from(scheduledTime, tz.local);
+
+    if (!scheduledDate.isAfter(tz.TZDateTime.now(tz.local))) {
+      debugPrint('Skipping past notification time: $scheduledTime');
+      return;
+    }
+
+    final notificationDetails = _buildNotificationDetails(
+      soundEnabled: soundEnabled,
+      vibrationEnabled: vibrationEnabled,
+    );
+
+    await _notifications.zonedSchedule(
+      id: id,
+      title: 'Movement Break',
+      body: 'Time to move! Tap to start your next Movement Break.',
+      scheduledDate: scheduledDate,
+      notificationDetails: notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: 'movement_break',
+    );
+
+    debugPrint(
+      'Scheduled Movement Break notification $id '
+      'for $scheduledDate',
+    );
+  }
+
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return _notifications.pendingNotificationRequests();
+  }
+
+  Future<void> cancelNotification(int id) async {
+    await _notifications.cancel(id: id);
+  }
+
   Future<void> cancelAll() async {
     await _notifications.cancelAll();
+  }
+
+  NotificationDetails _buildNotificationDetails({
+    required bool soundEnabled,
+    required bool vibrationEnabled,
+  }) {
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        movementChannelId,
+        movementChannelName,
+        channelDescription: movementChannelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: soundEnabled,
+        enableVibration: vibrationEnabled,
+        ticker: 'Movement Break reminder',
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: soundEnabled,
+      ),
+    );
+  }
+
+  Future<void> _initializeTimeZone() async {
+    if (_timeZoneInitialized) {
+      return;
+    }
+
+    tz.initializeTimeZones();
+
+    try {
+      final timeZone = await FlutterTimezone.getLocalTimezone();
+
+      tz.setLocalLocation(tz.getLocation(timeZone.identifier));
+
+      debugPrint('Movement Break timezone: ${timeZone.identifier}');
+    } catch (error) {
+      debugPrint('Could not determine local timezone: $error');
+    }
+
+    _timeZoneInitialized = true;
   }
 
   Future<void> _createAndroidNotificationChannel() async {
@@ -162,5 +236,11 @@ class NotificationService {
     }
 
     await androidPlugin.createNotificationChannel(channel);
+  }
+
+  void _ensureInitialized() {
+    if (!_isInitialized) {
+      throw StateError('NotificationService must be initialized before use.');
+    }
   }
 }
