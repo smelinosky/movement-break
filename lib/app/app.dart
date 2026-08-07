@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'providers/app_state.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'theme/app_theme.dart';
+import 'screens/home/home_screen.dart';
 
 class MovementBreakApp extends StatelessWidget {
   const MovementBreakApp({
@@ -24,7 +25,9 @@ class MovementBreakApp extends StatelessWidget {
         title: 'Movement Break',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        home: const OnboardingScreen(),
+        home: appState.onboardingCompleted
+            ? const HomeScreen()
+            : const OnboardingScreen(),
       ),
     );
   }

@@ -30,6 +30,7 @@ class AppState extends ChangeNotifier {
 
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
+  bool _onboardingCompleted = false;
   bool _isInitialized = false;
 
   int get completedBreaks => _completedBreaks;
@@ -45,6 +46,7 @@ class AppState extends ChangeNotifier {
 
   bool get soundEnabled => _soundEnabled;
   bool get vibrationEnabled => _vibrationEnabled;
+  bool get onboardingCompleted => _onboardingCompleted;
   bool get isInitialized => _isInitialized;
 
   double get dailyProgress {
@@ -69,17 +71,22 @@ class AppState extends ChangeNotifier {
     _reminderInterval = await _storageService.getReminderInterval();
 
     _soundEnabled = await _storageService.getSoundEnabled();
+
     _vibrationEnabled = await _storageService.getVibrationEnabled();
+
+    _onboardingCompleted = await _storageService.getOnboardingCompleted();
 
     if (savedDate == today) {
       _completedBreaks = await _storageService.getCompletedBreaks();
     } else {
       _completedBreaks = 0;
+
       await _storageService.setCompletedBreaks(0);
       await _storageService.setProgressDate(today);
     }
 
     _isInitialized = true;
+
     notifyListeners();
   }
 
@@ -87,9 +94,53 @@ class AppState extends ChangeNotifier {
     await _resetIfNewDay();
 
     _completedBreaks++;
+
     await _storageService.setCompletedBreaks(_completedBreaks);
 
     notifyListeners();
+  }
+
+  Future<void> completeOnboardingSetup({
+    required List<int> reminderDays,
+    required int startHour,
+    required int startMinute,
+    required int endHour,
+    required int endMinute,
+    required int reminderInterval,
+    required int dailyGoal,
+  }) async {
+    _reminderDays = List<int>.from(reminderDays)..sort();
+
+    _startHour = startHour;
+    _startMinute = startMinute;
+
+    _endHour = endHour;
+    _endMinute = endMinute;
+
+    _reminderInterval = reminderInterval;
+    _dailyGoal = dailyGoal;
+
+    _onboardingCompleted = true;
+
+    await _storageService.setReminderDays(_reminderDays);
+
+    await _storageService.setStartHour(_startHour);
+
+    await _storageService.setStartMinute(_startMinute);
+
+    await _storageService.setEndHour(_endHour);
+
+    await _storageService.setEndMinute(_endMinute);
+
+    await _storageService.setReminderInterval(_reminderInterval);
+
+    await _storageService.setDailyGoal(_dailyGoal);
+
+    await _storageService.setOnboardingCompleted(true);
+
+    notifyListeners();
+
+    await _rescheduleNotifications();
   }
 
   Future<void> setDailyGoal(int goal) async {
@@ -98,6 +149,7 @@ class AppState extends ChangeNotifier {
     }
 
     _dailyGoal = goal;
+
     await _storageService.setDailyGoal(goal);
 
     notifyListeners();
@@ -195,6 +247,7 @@ class AppState extends ChangeNotifier {
     _completedBreaks = 0;
 
     await _storageService.setCompletedBreaks(0);
+
     await _storageService.setProgressDate(_dateKey(DateTime.now()));
 
     notifyListeners();
@@ -216,6 +269,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> _resetIfNewDay() async {
     final today = _dateKey(DateTime.now());
+
     final savedDate = await _storageService.getProgressDate();
 
     if (savedDate == today) {

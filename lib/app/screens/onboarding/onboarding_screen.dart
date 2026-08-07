@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/app_state.dart';
 import 'onboarding_page.dart';
+import 'setup_wizard_screen.dart';
+import '../video/video_screen.dart';
+import 'setup_complete_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -59,8 +64,63 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Setup wizard is coming next.')),
+    final appState = context.read<AppState>();
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => SetupWizardScreen(
+          initialDays: appState.reminderDays,
+          initialStartTime: TimeOfDay(
+            hour: appState.startHour,
+            minute: appState.startMinute,
+          ),
+          initialEndTime: TimeOfDay(
+            hour: appState.endHour,
+            minute: appState.endMinute,
+          ),
+          initialInterval: appState.reminderInterval,
+          initialGoal: appState.dailyGoal,
+          onComplete:
+              ({
+                required List<int> reminderDays,
+                required TimeOfDay startTime,
+                required TimeOfDay endTime,
+                required int interval,
+                required int dailyGoal,
+              }) async {
+                await appState.completeOnboardingSetup(
+                  reminderDays: reminderDays,
+                  startHour: startTime.hour,
+                  startMinute: startTime.minute,
+                  endHour: endTime.hour,
+                  endMinute: endTime.minute,
+                  reminderInterval: interval,
+                  dailyGoal: dailyGoal,
+                );
+
+                if (!context.mounted) {
+                  return;
+                }
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (context) => SetupCompleteScreen(
+                      onStartMoving: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => const VideoScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+        ),
+      ),
     );
   }
 

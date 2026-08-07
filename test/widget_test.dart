@@ -6,7 +6,9 @@ import 'package:movement_break/app/services/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Movement Break home screen loads', (WidgetTester tester) async {
+  testWidgets('Movement Break onboarding screen loads', (
+    WidgetTester tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
 
     final storageService = await StorageService.create();
@@ -21,8 +23,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Movement Break'), findsOneWidget);
-    expect(find.text("LET'S MOVE!"), findsOneWidget);
-    expect(find.text('0 / 4'), findsOneWidget);
+    expect(find.text('When was the last time you moved?'), findsOneWidget);
+
+    expect(find.text('Continue'), findsOneWidget);
   });
 }
