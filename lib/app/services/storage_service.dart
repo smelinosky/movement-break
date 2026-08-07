@@ -22,6 +22,9 @@ class StorageService {
   static const String _soundEnabledKey = 'sound_enabled';
   static const String _vibrationEnabledKey = 'vibration_enabled';
 
+  // Onboarding.
+  static const String _onboardingCompletedKey = 'onboarding_completed';
+
   static Future<StorageService> create() async {
     final preferences = await SharedPreferences.getInstance();
     return StorageService(preferences);
@@ -134,5 +137,15 @@ class StorageService {
 
   Future<void> setVibrationEnabled(bool value) async {
     await _preferences.setBool(_vibrationEnabledKey, value);
+  }
+
+  // Onboarding
+
+  Future<bool> getOnboardingCompleted() async {
+    return _preferences.getBool(_onboardingCompletedKey) ?? false;
+  }
+
+  Future<void> setOnboardingCompleted(bool value) async {
+    await _preferences.setBool(_onboardingCompletedKey, value);
   }
 }
