@@ -71,7 +71,6 @@ class AppState extends ChangeNotifier {
     _reminderInterval = await _storageService.getReminderInterval();
 
     _soundEnabled = await _storageService.getSoundEnabled();
-
     _vibrationEnabled = await _storageService.getVibrationEnabled();
 
     _onboardingCompleted = await _storageService.getOnboardingCompleted();
@@ -90,8 +89,28 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> checkForNewDay() async {
+    final today = _dateKey(DateTime.now());
+    final savedDate = await _storageService.getProgressDate();
+
+    if (savedDate == today) {
+      return false;
+    }
+
+    _completedBreaks = 0;
+
+    await _storageService.setCompletedBreaks(0);
+    await _storageService.setProgressDate(today);
+
+    notifyListeners();
+
+    debugPrint('Movement Break daily progress reset for $today.');
+
+    return true;
+  }
+
   Future<void> completeMovement() async {
-    await _resetIfNewDay();
+    await checkForNewDay();
 
     _completedBreaks++;
 
@@ -265,21 +284,6 @@ class AppState extends ChangeNotifier {
     } catch (error) {
       debugPrint('Movement Break rescheduling error: $error');
     }
-  }
-
-  Future<void> _resetIfNewDay() async {
-    final today = _dateKey(DateTime.now());
-
-    final savedDate = await _storageService.getProgressDate();
-
-    if (savedDate == today) {
-      return;
-    }
-
-    _completedBreaks = 0;
-
-    await _storageService.setCompletedBreaks(0);
-    await _storageService.setProgressDate(today);
   }
 
   String _dateKey(DateTime date) {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../../theme/app_colors.dart';
-
 import 'package:provider/provider.dart';
 
 import '../../providers/app_state.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/banner_ad_widget.dart';
+import '../home/home_screen.dart';
 
 class CompletionScreen extends StatelessWidget {
   const CompletionScreen({super.key});
@@ -61,13 +61,23 @@ class CompletionScreen extends StatelessWidget {
                   progress: progress,
                 ),
                 const SizedBox(height: 24),
-                _buildAdPlaceholder(context),
+
+                const BannerAdWidget(),
+
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.popUntil(context, (route) => route.isFirst);
-                  },
-                  child: const Text('Continue'),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute<void>(
+                          builder: (context) => const HomeScreen(),
+                        ),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text('Continue'),
+                  ),
                 ),
               ],
             ),
@@ -104,6 +114,7 @@ class CompletionScreen extends StatelessWidget {
     required double progress,
   }) {
     final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -166,22 +177,5 @@ class CompletionScreen extends StatelessWidget {
     }
 
     return 'A little movement can make a meaningful difference.';
-  }
-
-  Widget _buildAdPlaceholder(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Center(
-        child: Text('AdMob Banner', style: theme.textTheme.bodySmall),
-      ),
-    );
   }
 }

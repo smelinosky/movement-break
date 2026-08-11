@@ -42,6 +42,8 @@ dependencies:
   flutter_local_notifications: ^22.2.0
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
+  package_info_plus: ^10.2.1
+  google_mobile_ads: ^9.0.0
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +55,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -62,6 +65,7 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/branding/movement_break_logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -93,3 +97,14 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_native_splash:
+  color: "#10271D"
+  image: assets/branding/movement_break_splash.png
+
+  android: true
+  ios: true
+  web: false
+
+  android_12:
+    color: "#10271D"
+    image: assets/branding/movement_break_splash.png
