@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.movement_break"
+    namespace = "app.movementbreak.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         // Replace this with a unique application ID before release.
-        applicationId = "com.example.movement_break"
+        applicationId = "app.movementbreak.app"
 
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion

@@ -116,7 +116,7 @@ class NotificationService {
     await _notifications.show(
       id: testNotificationId,
       title: 'Movement Break',
-      body: 'Time to move! Tap to start your next Movement Break.',
+      body: 'Time to move! Tap to open Movement Break.',
       notificationDetails: notificationDetails,
       payload: 'movement_break',
     );
@@ -149,7 +149,7 @@ class NotificationService {
     await _notifications.zonedSchedule(
       id: id,
       title: 'Movement Break',
-      body: 'Time to move! Tap to start your next Movement Break.',
+      body: 'Time to move! Tap to open Movement Break.',
       scheduledDate: scheduledDate,
       notificationDetails: notificationDetails,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

@@ -1,3 +1,4 @@
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/notification_service.dart';
@@ -19,14 +20,33 @@ class SetupNotificationsScreen extends StatefulWidget {
       _SetupNotificationsScreenState();
 }
 
-class _SetupNotificationsScreenState extends State<SetupNotificationsScreen> {
+class _SetupNotificationsScreenState extends State<SetupNotificationsScreen>
+    with WidgetsBindingObserver {
   bool _isRequestingPermission = false;
   bool _permissionGranted = false;
+  bool _permissionWasDenied = false;
 
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
+
     _checkPermission();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPermission();
+    }
   }
 
   Future<void> _checkPermission() async {
@@ -38,11 +58,20 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen> {
 
     setState(() {
       _permissionGranted = enabled;
+
+      if (enabled) {
+        _permissionWasDenied = false;
+      }
     });
   }
 
   Future<void> _enableNotifications() async {
     if (_isRequestingPermission) {
+      return;
+    }
+
+    if (_permissionWasDenied) {
+      await _openNotificationSettings();
       return;
     }
 
@@ -58,6 +87,7 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen> {
 
     setState(() {
       _permissionGranted = granted;
+      _permissionWasDenied = !granted;
       _isRequestingPermission = false;
     });
 
@@ -65,21 +95,30 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Movement Break needs notification permission '
-            'to send your scheduled reminders.',
+            'Notifications are turned off. '
+            'Enable them in your device settings to receive reminders.',
           ),
         ),
       );
     }
   }
 
+  Future<void> _openNotificationSettings() async {
+    await AppSettings.openAppSettings(
+      type: AppSettingsType.notification,
+    );
+  }
+
   void _continue() {
     if (!_permissionGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enable notifications to continue.'),
+          content: Text(
+            'Please enable notifications to continue.',
+          ),
         ),
       );
+
       return;
     }
 
@@ -88,12 +127,21 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final buttonText = _permissionGranted
+        ? 'Continue'
+        : _permissionWasDenied
+        ? 'Open Notification Settings'
+        : 'Enable Notifications';
+
     return SetupPage(
       step: 6,
       totalSteps: 6,
       title: 'Enable Notifications',
-      subtitle: 'Movement Break only works with notifications enabled.',
-      buttonText: _permissionGranted ? 'Continue' : 'Enable Notifications',
+      subtitle: _permissionWasDenied
+          ? 'Notifications are turned off. Enable them in your device '
+                'settings to receive Movement Break reminders.'
+          : 'Movement Break only works with notifications enabled.',
+      buttonText: buttonText,
       onBack: widget.onBack,
       onContinue: _permissionGranted ? _continue : _enableNotifications,
       child: Column(
@@ -144,7 +192,10 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen> {
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen),
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Notifications enabled',
@@ -161,11 +212,18 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen> {
     );
   }
 
-  Widget _buildBenefit({required IconData icon, required String text}) {
+  Widget _buildBenefit({
+    required IconData icon,
+    required String text,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppColors.primaryGreen, size: 24),
+        Icon(
+          icon,
+          color: AppColors.primaryGreen,
+          size: 24,
+        ),
         const SizedBox(width: 14),
         Expanded(
           child: Text(

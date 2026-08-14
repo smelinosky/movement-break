@@ -208,7 +208,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
         const SizedBox(height: 20),
-        Text('Great job! Keep it going.', style: theme.textTheme.titleMedium),
+        Text(
+          completedBreaks >= dailyGoal
+              ? 'Daily goal complete. Nice work!'
+              : 'Great job! Keep it going.',
+          style: theme.textTheme.titleMedium,
+        ),
       ],
     );
   }

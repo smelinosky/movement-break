@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/app_colors.dart';
 
@@ -13,6 +14,16 @@ class AboutScreen extends StatefulWidget {
 class _AboutScreenState extends State<AboutScreen> {
   String _version = '';
   String _buildNumber = '';
+
+  static final Uri _websiteUrl = Uri.parse('https://movementbreak.app');
+
+  static final Uri _youtubeUrl = Uri.parse(
+    'https://www.youtube.com/channel/UCzaGClKFH5W5ny_APmvCMFQ',
+  );
+
+  static final Uri _linkedInUrl = Uri.parse(
+    'https://www.linkedin.com/company/movementbreak/',
+  );
 
   @override
   void initState() {
@@ -33,35 +44,35 @@ class _AboutScreenState extends State<AboutScreen> {
     });
   }
 
+  Future<void> _openLink(BuildContext context, Uri url) async {
+    final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open this link right now.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('About Movement Break'),
-      ),
+      appBar: AppBar(title: const Text('About Movement Break')),
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.background,
-              AppColors.backgroundDark,
-            ],
+            colors: [AppColors.background, AppColors.backgroundDark],
           ),
         ),
         child: SafeArea(
           top: false,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              24,
-              20,
-              32,
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
             children: [
               _buildBrandHeader(theme),
               const SizedBox(height: 28),
@@ -135,21 +146,30 @@ class _AboutScreenState extends State<AboutScreen> {
 
               _buildSectionCard(
                 title: 'Connect',
-                child: const Column(
+                child: Column(
                   children: [
                     _ConnectRow(
                       icon: Icons.language_outlined,
                       label: 'movementbreak.app',
+                      onTap: () {
+                        _openLink(context, _websiteUrl);
+                      },
                     ),
-                    SizedBox(height: 14),
+                    const SizedBox(height: 14),
                     _ConnectRow(
                       icon: Icons.play_circle_outline,
                       label: 'YouTube',
+                      onTap: () {
+                        _openLink(context, _youtubeUrl);
+                      },
                     ),
-                    SizedBox(height: 14),
+                    const SizedBox(height: 14),
                     _ConnectRow(
                       icon: Icons.business_center_outlined,
                       label: 'LinkedIn',
+                      onTap: () {
+                        _openLink(context, _linkedInUrl);
+                      },
                     ),
                   ],
                 ),
@@ -162,8 +182,8 @@ class _AboutScreenState extends State<AboutScreen> {
                   _version.isEmpty
                       ? 'Loading version information...'
                       : 'Version $_version\n'
-                          'Build $_buildNumber\n\n'
-                          '© 2026 Movement Break',
+                            'Build $_buildNumber\n\n'
+                            '© 2026 Movement Break',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -194,9 +214,7 @@ class _AboutScreenState extends State<AboutScreen> {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color: AppColors.primaryGreen,
-            ),
+            border: Border.all(color: AppColors.primaryGreen),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -226,19 +244,14 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Widget _buildSectionCard({
-    required String title,
-    required Widget child,
-  }) {
+  Widget _buildSectionCard({required String title, required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.border,
-        ),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,9 +281,7 @@ class _AboutScreenState extends State<AboutScreen> {
 }
 
 class _PhilosophyItem extends StatelessWidget {
-  const _PhilosophyItem({
-    required this.text,
-  });
+  const _PhilosophyItem({required this.text});
 
   final String text;
 
@@ -283,16 +294,10 @@ class _PhilosophyItem extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.only(top: 7),
-            child: Icon(
-              Icons.circle,
-              size: 7,
-              color: AppColors.primaryGreen,
-            ),
+            child: Icon(Icons.circle, size: 7, color: AppColors.primaryGreen),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(text),
-          ),
+          Expanded(child: Text(text)),
         ],
       ),
     );
@@ -303,33 +308,34 @@ class _ConnectRow extends StatelessWidget {
   const _ConnectRow({
     required this.icon,
     required this.label,
+    required this.onTap,
   });
 
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: AppColors.primaryGreen,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primaryGreen),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
-          ),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
         ),
-        const Icon(
-          Icons.chevron_right,
-          color: AppColors.textSecondary,
-        ),
-      ],
+      ),
     );
   }
 }
