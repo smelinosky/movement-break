@@ -256,8 +256,13 @@ class _VideoScreenState extends State<VideoScreen> {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: AppColors.border),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: YoutubePlayer(controller: _controller, aspectRatio: 16 / 9),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: YoutubePlayer(
+                controller: _controller,
+                aspectRatio: 16 / 9,
+              ),
+            ),
           ),
           const SizedBox(height: 16),
 

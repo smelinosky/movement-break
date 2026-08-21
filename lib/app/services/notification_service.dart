@@ -99,7 +99,18 @@ class NotificationService {
       return await androidPlugin.areNotificationsEnabled() ?? false;
     }
 
-    return true;
+    final iosPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+
+    if (iosPlugin != null) {
+      final permissions = await iosPlugin.checkPermissions();
+
+      return permissions?.isEnabled ?? false;
+    }
+
+    return false;
   }
 
   Future<void> showTestNotification({

@@ -23,10 +23,17 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       'ca-app-pub-3940256099942544/2934735716';
 
   String get _adUnitId {
-    if (!kReleaseMode) {
-      return Platform.isAndroid ? _androidTestAdUnitId : _iosTestAdUnitId;
+    // Keep iOS on Google's test banner during TestFlight testing.
+    if (Platform.isIOS) {
+      return _iosTestAdUnitId;
     }
 
+    // Android debug/development builds use Google's test banner.
+    if (!kReleaseMode && Platform.isAndroid) {
+      return _androidTestAdUnitId;
+    }
+
+    // Android production builds use the real Movement Break banner ID.
     if (Platform.isAndroid) {
       final productionId = dotenv.env['ADMOB_ANDROID_BANNER_ID'];
 
@@ -37,9 +44,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       return productionId;
     }
 
-    throw UnsupportedError(
-      'Production iOS AdMob banner ID has not been configured yet.',
-    );
+    throw UnsupportedError('Banner ads are not configured for this platform.');
   }
 
   @override
@@ -66,11 +71,13 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
             _isLoaded = true;
           });
 
-          debugPrint(
-            kReleaseMode
-                ? 'Production banner ad loaded.'
-                : 'Test banner ad loaded.',
-          );
+          if (Platform.isIOS) {
+            debugPrint('iOS test banner ad loaded.');
+          } else if (kReleaseMode) {
+            debugPrint('Android production banner ad loaded.');
+          } else {
+            debugPrint('Android test banner ad loaded.');
+          }
         },
         onAdFailedToLoad: (ad, error) {
           debugPrint('Banner ad failed to load: $error');
