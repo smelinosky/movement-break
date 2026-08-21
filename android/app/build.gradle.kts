@@ -1,5 +1,5 @@
-import java.util.Properties
 import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -66,5 +66,9 @@ flutter {
 dependencies {
     coreLibraryDesugaring(
         "com.android.tools:desugar_jdk_libs:2.1.4",
+    )
+
+    implementation(
+        "androidx.work:work-runtime:2.11.2",
     )
 }
