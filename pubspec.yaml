@@ -113,7 +113,7 @@ flutter_native_splash:
     image: assets/branding/movement_break_splash.png
     
 flutter_launcher_icons:
-  android: true
+  android: false
   ios: true
-  image_path: "assets/branding/movement_break_splash.png"
-  min_sdk_android: 21
+  image_path_ios: "assets/branding/movement_break_ios.png"
+  remove_alpha_ios: true

@@ -190,6 +190,7 @@ class _VideoScreenState extends State<VideoScreen> {
   void dispose() {
     _controller.close();
     _playlistService.dispose();
+
     super.dispose();
   }
 
@@ -250,22 +251,42 @@ class _VideoScreenState extends State<VideoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: YoutubePlayer(
-                controller: _controller,
-                aspectRatio: 16 / 9,
+          Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: YoutubePlayer(
+                  controller: _controller,
+                  aspectRatio: 16 / 9,
+                ),
               ),
-            ),
+              const Positioned(
+                top: 0,
+                left: 0,
+                child: _VideoCornerMask(alignment: Alignment.topLeft),
+              ),
+              const Positioned(
+                top: 0,
+                right: 0,
+                child: _VideoCornerMask(alignment: Alignment.topRight),
+              ),
+              const Positioned(
+                bottom: 0,
+                left: 0,
+                child: _VideoCornerMask(alignment: Alignment.bottomLeft),
+              ),
+              const Positioned(
+                bottom: 0,
+                right: 0,
+                child: _VideoCornerMask(alignment: Alignment.bottomRight),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-
           if (_currentVideo != null)
             Text(
               _currentVideo!.title,
@@ -274,13 +295,9 @@ class _VideoScreenState extends State<VideoScreen> {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleMedium,
             ),
-
           const SizedBox(height: 20),
-
           TextButton(onPressed: _skipMovement, child: const Text('Skip')),
-
           const SizedBox(height: 8),
-
           OutlinedButton(
             onPressed: _isChangingVideo ? null : _chooseDifferentMovement,
             child: _isChangingVideo
@@ -291,16 +308,12 @@ class _VideoScreenState extends State<VideoScreen> {
                   )
                 : const Text('Choose a Different Movement'),
           ),
-
           const SizedBox(height: 12),
-
           ElevatedButton(
             onPressed: _completeMovement,
             child: const Text('Done'),
           ),
-
           const SizedBox(height: 18),
-
           Text(
             'Take your time. Move in a way that feels comfortable.',
             textAlign: TextAlign.center,
@@ -309,5 +322,59 @@ class _VideoScreenState extends State<VideoScreen> {
         ],
       ),
     );
+  }
+}
+
+class _VideoCornerMask extends StatelessWidget {
+  const _VideoCornerMask({required this.alignment});
+
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 22.0;
+    const radius = 20.0;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _VideoCornerMaskPainter(alignment: alignment, radius: radius),
+      ),
+    );
+  }
+}
+
+class _VideoCornerMaskPainter extends CustomPainter {
+  const _VideoCornerMaskPainter({
+    required this.alignment,
+    required this.radius,
+  });
+
+  final Alignment alignment;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = AppColors.background;
+
+    final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final circleCenter = Offset(
+      alignment.x < 0 ? radius : size.width - radius,
+      alignment.y < 0 ? radius : size.height - radius,
+    );
+
+    final circle = Path()
+      ..addOval(Rect.fromCircle(center: circleCenter, radius: radius));
+
+    final maskedPath = Path.combine(PathOperation.difference, path, circle);
+
+    canvas.drawPath(maskedPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _VideoCornerMaskPainter oldDelegate) {
+    return false;
   }
 }
