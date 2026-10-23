@@ -1,4 +1,3 @@
-import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/notification_service.dart';
@@ -70,11 +69,6 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen>
       return;
     }
 
-    if (_permissionWasDenied) {
-      await _openNotificationSettings();
-      return;
-    }
-
     setState(() {
       _isRequestingPermission = true;
     });
@@ -96,32 +90,14 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen>
         const SnackBar(
           content: Text(
             'Notifications are turned off. '
-            'Enable them in your device settings to receive reminders.',
+            'You can continue without them and enable reminders later in Settings.',
           ),
         ),
       );
     }
-  }
-
-  Future<void> _openNotificationSettings() async {
-    await AppSettings.openAppSettings(
-      type: AppSettingsType.notification,
-    );
   }
 
   void _continue() {
-    if (!_permissionGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please enable notifications to continue.',
-          ),
-        ),
-      );
-
-      return;
-    }
-
     widget.onContinue();
   }
 
@@ -130,20 +106,23 @@ class _SetupNotificationsScreenState extends State<SetupNotificationsScreen>
     final buttonText = _permissionGranted
         ? 'Continue'
         : _permissionWasDenied
-        ? 'Open Notification Settings'
-        : 'Enable Notifications';
+            ? 'Continue Without Notifications'
+            : 'Enable Notifications';
 
     return SetupPage(
       step: 6,
       totalSteps: 6,
       title: 'Enable Notifications',
       subtitle: _permissionWasDenied
-          ? 'Notifications are turned off. Enable them in your device '
-                'settings to receive Movement Break reminders.'
-          : 'Movement Break only works with notifications enabled.',
+          ? 'Notifications are turned off. You can continue without them '
+              'and enable reminders later in Settings.'
+          : 'Enable optional reminders to help you stay on track with your '
+              'Movement Break schedule.',
       buttonText: buttonText,
       onBack: widget.onBack,
-      onContinue: _permissionGranted ? _continue : _enableNotifications,
+      onContinue: _permissionGranted || _permissionWasDenied
+          ? _continue
+          : _enableNotifications,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
